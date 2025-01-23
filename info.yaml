@@ -42,10 +42,10 @@ pinout:
   uo[7]: ""
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
+  uio[0]: "(INT)"
+  uio[1]: "(RESET)"
+  uio[2]: "SCL"
+  uio[3]: "SDA"
   uio[4]: ""
   uio[5]: ""
   uio[6]: ""
