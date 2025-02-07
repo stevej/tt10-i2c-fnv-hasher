@@ -61,6 +61,9 @@ module fnv_1a_32 (
                     //       = out);
                     //           end
                     //             end
-
+                  end
+            end
+end
+`endif
 endmodule
 `endif

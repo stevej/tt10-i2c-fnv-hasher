@@ -2,6 +2,6 @@
 
 set -ex
 
-sby -f formal.sby -t bmc
-sby -f formal.sby -t prove
-sby -f formal.sby -t cover
+sby -f formal.sby bmc
+sby -f formal.sby prove
+sby -f formal.sby cover

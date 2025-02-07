@@ -18,7 +18,7 @@ cover: smtbmc z3
 
 [script]
 read -formal project.v
-prep -top project
+prep -top tt_um_i2c_fnv1a_hasher 
 memory_map -rom-only
 # use this to help track down PREUNSAT, only works on a single module at a time.
 # hierarchy -check; proc; opt
@@ -29,3 +29,5 @@ byte_transmitter.sv
 byte_receiver.sv
 fnv_1a_32.sv
 i2c_periph.sv
+project.v
+mux_2_1.sv
