@@ -10,3 +10,11 @@ test/__pycache__/
 test/results.xml
 test/gate_level_netlist.v
 tt
+oss-cad-suite
+oss-cad-suite-*
+src/formal/
+src/formal_bmc/
+src/formal_cover/
+src/formal_prove/
+harden.log
+~
