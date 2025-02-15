@@ -23,6 +23,8 @@ project:
     - "mux_2_1.sv"
     - "byte_receiver.sv"
     - "byte_transmitter.sv"
+    - "async_fifo_combined.v"
+    - "hasher_fsm.sv"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:

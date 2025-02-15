@@ -6,9 +6,11 @@
 `include "byte_transmitter.sv"
 `include "byte_receiver.sv"
 `include "mux_2_1.sv"
+`include "async_fifo_combined.v"
 
 module i2c_periph (
     input clk,  // using SCL for our clock.
+    input system_clk, // the clock used by the main design
     input reset,
     input read_channel,
     output reg [7:0] direction,  // set to the correct mask before using write_channel
@@ -65,6 +67,58 @@ module i2c_periph (
   reg [7:0] one_zero;
   reg [7:0] zero_one;
 
+  // data and wires sent from an i2c request to be hashed.
+  reg [7:0] to_hasher_write_data;
+  logic to_hasher_write_inc;
+  logic to_hasher_write_full;
+  logic to_hasher_awfull;
+
+  reg [7:0] to_hasher_read_data;
+  logic to_hasher_read_inc;
+  logic to_hasher_read_empty;
+  logic to_hasher_aread_empty;
+
+  async_fifo  #(.DSIZE(8), .ASIZE(4)) to_hasher_fifo (
+    .wclk(clk),
+    .wrst_n(~reset),
+    .winc(to_hasher_write_inc), // push data into the fifo from i2c write request
+    .wdata(to_hasher_write_data),
+    .wfull(to_hasher_write_full),
+    .awfull(to_hasher_awfull), // huh?
+    .rclk(system_clk),
+    .rrst_n(~reset),
+    .rinc(to_hasher_read_inc), // pop data from the fifo into hasher
+    .rdata(to_hasher_read_data), // read_* should be handled by hasher_fsm
+    .rempty(to_hasher_read_empty),
+    .arempty(to_hasher_aread_empty)
+  );
+
+  // data and wires sent from the hasher to an i2c response.
+  reg [31:0] from_hasher_write_data;
+  logic from_hasher_write_inc;
+  logic from_hasher_write_full;
+  logic from_hasher_awfull;
+
+  reg [31:0] from_hasher_read_data;
+  logic from_hasher_read_inc;
+  logic from_hasher_read_empty;
+  logic from_hasher_aread_empty;
+
+  async_fifo  #(.DSIZE(32), .ASIZE(4)) from_hasher_fifo(
+    .wclk(clk),
+    .wrst_n(~reset),
+    .winc(from_hasher_write_inc), // push data onto fifo from hasher
+    .wdata(from_hasher_write_data),
+    .wfull(from_hasher_write_full),
+    .awfull(from_hasher_awfull), // huh?
+    .rclk(system_clk),
+    .rrst_n(~reset),
+    .rinc(from_hasher_read_inc), // pop data from fifo. this goes into the i2c response body
+    .rdata(from_hasher_read_data), // read_* should be handled by hasher_fsm
+    .rempty(from_hasher_read_empty),
+    .arempty(from_hasher_aread_empty)
+  );
+
   always @(posedge clk) begin
     if (reset) begin
       r_output_selector_transmitter <= 1;
@@ -101,8 +155,16 @@ module i2c_periph (
             address <= receiver_byte_buffer[7:1];
             read_request <= receiver_byte_buffer[0];
             byte_receiver_enable <= 0;
+            // NB: currently in our design, we ignore ACKs and NACKs from i2c transmittor.
             if (read_request) begin
               case (address)
+                7'h71: begin // fnv-1a hasher
+                // read 32 bits off last_hash_fifo and stream it back as 32 bits.
+                // There will be an ACK every 8 bits so how to handle that? switch direction, read ack, switch back?
+                end
+                7'h72: begin // status byte of entries in `to_hash_fifo`
+                  // send status byte back: how many entries in to_hash_fifo. we expect 0 all the time.
+                end
                 7'h2A: begin  // This is our ZeroOnePeriph peripheral.
                   direction <= WriteMask;
                   transmitter_byte_buffer <= zero_one;
@@ -123,6 +185,20 @@ module i2c_periph (
                   byte_transmitter_enable <= 1;
                   byte_count <= 0;
                   current_state <= WriteBuffer;
+                end
+              endcase
+            end else begin // write address
+              case (address)
+                7'h71: begin // fnv-1a hasher
+                // read byte, send ack, put byte onto to_hash_fifo
+                end
+                default: begin  // Bad Address
+                  direction <= WriteMask;
+                  transmitter_byte_buffer <= bad_address;
+                  byte_transmitter_enable <= 1;
+                  byte_count <= 0;
+                  current_state <= WriteBuffer;
+                  // byte_receiver feeds 8 bits into wdata, then wenc is set to 1;
                 end
               endcase
             end
@@ -148,5 +224,11 @@ module i2c_periph (
       last_sda <= read_channel;
     end
   end
+
+`ifdef FORMAL
+  always @(posedge clk) begin
+  end
+`endif
+
 endmodule
 `endif

@@ -5,15 +5,17 @@
 `timescale 1us / 100 ns
 
 module fnv_1a_32 (
-    input wire clk,
-    input wire reset,
-    input wire [31:0] in,
-    output wire [31:0] out
+    input logic clk,
+    input logic reset,
+    input logic enable,
+    input logic [7:0] in,
+    output logic [31:0] out
 );
 
-  parameter [31:0] OFFSET_BASIS = 32'd2166136261;
-  parameter [31:0] FNV_PRIME = 32'd16777619;
+  parameter [31:0] OffsetBasis = 32'd2166136261;
+  parameter [31:0] FnvPrime = 32'd16777619;
 
+  parameter [23:0] LeadingZeros = {24{1'b0}};
   reg [31:0] hash;
 
   /**
@@ -25,15 +27,15 @@ module fnv_1a_32 (
     *   hash = hash * FNV_prime
     * return hash
     **/
-
   always @(posedge clk) begin
-    if (reset) hash <= OFFSET_BASIS;
-
-    hash <= (hash ^ in) * FNV_PRIME;
+    if (reset) begin
+      hash <= OffsetBasis;
+    end else if (enable) begin
+      hash <= (hash ^ {LeadingZeros, in}) * FnvPrime;
+    end
   end
 
   assign out = hash;
-
 
   `ifdef FORMAL
      logic f_past_valid;
@@ -43,27 +45,19 @@ module fnv_1a_32 (
       reset = 1;
         end
 
-  always_comb begin
-               if (!f_past_valid) assume (reset);
-                  end
+    always_comb begin
+     if (!f_past_valid)
+       assume (reset);
+     end
 
-            always @(posedge sck) begin
-                  if (f_past_valid) begin
-                          // Assert
-                    // the
-                    // basis
-                    // of any
-                    // hash
-                    // function
-                    //       assert
-                    //       (in
-                    //       !
-                    //       = out);
-                    //           end
-                    //             end
-                  end
-            end
-end
-`endif
+      always @(posedge sck) begin
+       if (f_past_valid) begin
+         // Assert the basis of any hash function.
+         assert (in != out);
+       end
+     end
+    end
+  `endif // FORMAL
+
 endmodule
 `endif

@@ -31,3 +31,5 @@ fnv_1a_32.sv
 i2c_periph.sv
 project.v
 mux_2_1.sv
+async_fifo_combined.v
+hasher_fsm.sv
