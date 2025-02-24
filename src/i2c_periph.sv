@@ -6,15 +6,18 @@
 `include "byte_transmitter.sv"
 `include "byte_receiver.sv"
 `include "mux_2_1.sv"
-`include "async_fifo_combined.v"
+`include "async_fifo.v"
 
 module i2c_periph (
-    input clk,  // using SCL for our clock.
-    input system_clk, // the clock used by the main design
+    input sck,  // using SCL for our clock.
+    input system_clk,  // the clock used by the main design
     input reset,
     input read_channel,
-    output reg [7:0] direction,  // set to the correct mask before using write_channel
-    output write_channel
+    output logic [7:0] direction,  // set to the correct mask before using write_channel
+    output reg write_channel,
+    input logic start_condition,
+    input logic repeated_start_condition,
+    input logic stop_condition
 );
 
   localparam [3:0] Stop = 4'b0001;  // 1
@@ -48,7 +51,7 @@ module i2c_periph (
 
   reg byte_receiver_enable;
   byte_receiver byte_receiver (
-      .clk(clk),
+      .clk(sck),
       .reset(reset),
       .enable(byte_receiver_enable),
       .in(read_channel),
@@ -57,7 +60,7 @@ module i2c_periph (
 
   reg byte_transmitter_enable;
   byte_transmitter byte_transmitter (
-      .clk(clk),
+      .clk(sck),
       .reset(reset),
       .enable(byte_transmitter_enable),
       .in(transmitter_byte_buffer),
@@ -78,19 +81,22 @@ module i2c_periph (
   logic to_hasher_read_empty;
   logic to_hasher_aread_empty;
 
-  async_fifo  #(.DSIZE(8), .ASIZE(4)) to_hasher_fifo (
-    .wclk(clk),
-    .wrst_n(~reset),
-    .winc(to_hasher_write_inc), // push data into the fifo from i2c write request
-    .wdata(to_hasher_write_data),
-    .wfull(to_hasher_write_full),
-    .awfull(to_hasher_awfull), // huh?
-    .rclk(system_clk),
-    .rrst_n(~reset),
-    .rinc(to_hasher_read_inc), // pop data from the fifo into hasher
-    .rdata(to_hasher_read_data), // read_* should be handled by hasher_fsm
-    .rempty(to_hasher_read_empty),
-    .arempty(to_hasher_aread_empty)
+  async_fifo #(
+      .DSIZE(8),
+      .ASIZE(4)
+  ) to_hasher_fifo (
+      .wclk(sck),
+      .wrst_n(~reset),
+      .winc(to_hasher_write_inc),  // push data into the fifo from i2c write request
+      .wdata(to_hasher_write_data),
+      .wfull(to_hasher_write_full),
+      .awfull(to_hasher_awfull),  // huh?
+      .rclk(system_clk),
+      .rrst_n(~reset),
+      .rinc(to_hasher_read_inc),  // pop data from the fifo into hasher
+      .rdata(to_hasher_read_data),  // read_* should be handled by hasher_fsm
+      .rempty(to_hasher_read_empty),
+      .arempty(to_hasher_aread_empty)
   );
 
   // data and wires sent from the hasher to an i2c response.
@@ -104,22 +110,25 @@ module i2c_periph (
   logic from_hasher_read_empty;
   logic from_hasher_aread_empty;
 
-  async_fifo  #(.DSIZE(32), .ASIZE(4)) from_hasher_fifo(
-    .wclk(clk),
-    .wrst_n(~reset),
-    .winc(from_hasher_write_inc), // push data onto fifo from hasher
-    .wdata(from_hasher_write_data),
-    .wfull(from_hasher_write_full),
-    .awfull(from_hasher_awfull), // huh?
-    .rclk(system_clk),
-    .rrst_n(~reset),
-    .rinc(from_hasher_read_inc), // pop data from fifo. this goes into the i2c response body
-    .rdata(from_hasher_read_data), // read_* should be handled by hasher_fsm
-    .rempty(from_hasher_read_empty),
-    .arempty(from_hasher_aread_empty)
+  async_fifo #(
+      .DSIZE(32),
+      .ASIZE(4)
+  ) from_hasher_fifo (
+      .wclk(sck),
+      .wrst_n(~reset),
+      .winc(from_hasher_write_inc),  // push data onto fifo from hasher
+      .wdata(from_hasher_write_data),
+      .wfull(from_hasher_write_full),
+      .awfull(from_hasher_awfull),  // huh?
+      .rclk(system_clk),
+      .rrst_n(~reset),
+      .rinc(from_hasher_read_inc),  // pop data from fifo. this goes into the i2c response body
+      .rdata(from_hasher_read_data),  // read_* should be handled by hasher_fsm
+      .rempty(from_hasher_read_empty),
+      .arempty(from_hasher_aread_empty)
   );
 
-  always @(posedge clk) begin
+  always @(posedge sck) begin
     if (reset) begin
       r_output_selector_transmitter <= 1;
       read_request <= 0;
@@ -137,6 +146,7 @@ module i2c_periph (
     end else begin
       case (current_state)
         Stop: begin
+          // transition from low to high over two clock cycles while in STOP.
           if (last_sda == 0 && read_channel == 1) begin
             current_state <= AddressAndRw;
           end else begin
@@ -158,12 +168,19 @@ module i2c_periph (
             // NB: currently in our design, we ignore ACKs and NACKs from i2c transmittor.
             if (read_request) begin
               case (address)
-                7'h71: begin // fnv-1a hasher
-                // read 32 bits off last_hash_fifo and stream it back as 32 bits.
-                // There will be an ACK every 8 bits so how to handle that? switch direction, read ack, switch back?
+                7'h71: begin  // fnv-1a hasher
+                  // read 32 bits off last_hash_fifo and stream it back as 32 bits.
+                  // There will be an ACK every 8 bits so how to handle that? switch direction, read ack, switch back?
                 end
-                7'h72: begin // status byte of entries in `to_hash_fifo`
+                7'h72: begin  // status byte of entries in `to_hash_fifo`
                   // send status byte back: how many entries in to_hash_fifo. we expect 0 all the time.
+                  direction <= WriteMask;
+                  // TODO: we should send how many entries are in the fifo
+                  transmitter_byte_buffer <= 8'b1111_1111;
+                  byte_transmitter_enable <= 1;
+                  byte_count <= 1;
+                  current_state <= WriteBuffer;
+
                 end
                 7'h2A: begin  // This is our ZeroOnePeriph peripheral.
                   direction <= WriteMask;
@@ -187,10 +204,10 @@ module i2c_periph (
                   current_state <= WriteBuffer;
                 end
               endcase
-            end else begin // write address
+            end else begin  // write address
               case (address)
-                7'h71: begin // fnv-1a hasher
-                // read byte, send ack, put byte onto to_hash_fifo
+                7'h71: begin  // fnv-1a hasher
+                  // read byte, send ack, put byte onto to_hash_fifo
                 end
                 default: begin  // Bad Address
                   direction <= WriteMask;

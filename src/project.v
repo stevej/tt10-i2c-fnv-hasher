@@ -5,7 +5,7 @@
 
 `default_nettype none `timescale 1us / 100 ns
 
-`include "i2c_periph.sv"
+`include "i2c_sampler.sv"
 
 module tt_um_i2c_fnv1a_hasher (
     input  wire [7:0] ui_in,    // Dedicated inputs
@@ -32,10 +32,11 @@ module tt_um_i2c_fnv1a_hasher (
    * uio[3] - SDA
    **/
 
-  i2c_periph i2c_periph (
-      .clk(uio_in[2]),
+  i2c_sampler i2c_sampler(
+      .clk(clk),
+      .sck(uio_in[2]), // SCL
       .reset(~uio_in[1] | ~rst_n),
-      .read_channel(uio_in[6]),
+      .read_channel(uio_in[3]),
       .direction(uio_oe),
       .write_channel(sda)
   );

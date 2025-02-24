@@ -18,3 +18,4 @@ src/formal_cover/
 src/formal_prove/
 harden.log
 ~
+test/tt08_top_tb

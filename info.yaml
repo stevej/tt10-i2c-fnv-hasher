@@ -19,6 +19,7 @@ project:
   source_files:
     - "project.v"
     - "i2c_periph.sv"
+    - "i2c_sampler.sv"
     - "fnv_1a_32.sv"
     - "mux_2_1.sv"
     - "byte_receiver.sv"

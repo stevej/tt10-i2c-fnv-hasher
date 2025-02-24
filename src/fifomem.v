@@ -1,6 +1,9 @@
 // distributed under the mit license
 // https://opensource.org/licenses/mit-license.php
 
+`ifndef _FIFOMEM_
+`define _FIFOMEM_
+
 `timescale 1 ns / 1 ps
 `default_nettype none
 
@@ -50,3 +53,4 @@ module fifomem
 endmodule
 
 `resetall
+`endif
