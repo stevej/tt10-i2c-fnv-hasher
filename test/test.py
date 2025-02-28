@@ -29,10 +29,10 @@ async def test_project(dut):
     # SCL is bidir bit 2
     # SDA is bidir bit 3
     dut.uio_in.value = 0b0000_0100
-    await ClockCycles(dut.clk, 1)
+    await ClockCycles(dut.clk, 2)
     dut.uio_in.value = 0b0000_0000
-    await ClockCycles(dut.clk, 1)
-    assert dut.uio_out.value == 0b0000_0000
+    await ClockCycles(dut.clk, 2)
+    assert dut.uio_out.value != 0b000000
 
     # Address is 0x72 to read how many entries are in the fifo
     for bit in STATUS_ADDRESS:

@@ -17,15 +17,21 @@ project:
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
-    - "project.v"
-    - "i2c_periph.sv"
-    - "i2c_sampler.sv"
-    - "fnv_1a_32.sv"
-    - "mux_2_1.sv"
+    - "async_fifo.v"
     - "byte_receiver.sv"
     - "byte_transmitter.sv"
-    - "async_fifo_combined.v"
+    - "fifomem.v"
+    - "fnv_1a_32.sv"
     - "hasher_fsm.sv"
+    - "i2c_periph.sv"
+    - "i2c_sampler.sv"
+    - "lzc.sv"
+    - "mux_2_1.sv"
+    - "project.v"
+    - "rptr_empty.v"
+    - "sync_r2w.v"
+    - "sync_w2r.v"
+    - "wptr_full.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
