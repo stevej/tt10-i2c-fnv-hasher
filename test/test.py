@@ -24,15 +24,19 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 3)
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
-
+    dut._log.info("Start Condition")
     # SCL is bidir bit 2
     # SDA is bidir bit 3
+    # One SCK clock cycle, SDA goes from high to low to signal Start
+    dut.uio_out.value = 0b0000_0000
+    dut.uio_in.value = 0b0000_1100
+    await ClockCycles(dut.clk, 8)
     dut.uio_in.value = 0b0000_0100
-    await ClockCycles(dut.clk, 2)
+    await ClockCycles(dut.clk, 8)
+    dut.uio_in.value = 0b0000_1000
+    await ClockCycles(dut.clk, 8)
     dut.uio_in.value = 0b0000_0000
-    await ClockCycles(dut.clk, 2)
-    assert dut.uio_out.value != 0b000000
+    await ClockCycles(dut.clk, 8)
 
     # Address is 0x72 to read how many entries are in the fifo
     for bit in STATUS_ADDRESS:
@@ -42,10 +46,10 @@ async def test_project(dut):
         await ClockCycles(dut.clk, 1)
 
     dut.uio_in.value = 0b0000_0100 # drive SCL high
-    await ClockCycles(dut.clk, 1)
+    await ClockCycles(dut.clk, 2)
     dut.uio_in.value = 0b0000_0000 # drive SCL low
-
-    assert dut.uio_out.value == 0b0000_1000
+    await ClockCycles(dut.clk, 2)
+    assert dut.uio_out.value == 0
 
 
 @cocotb.test()
