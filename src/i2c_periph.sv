@@ -1,7 +1,8 @@
 `ifndef _I2C_PERIPH_
 `define _I2C_PERIPH_
 
-`default_nettype none `timescale 1us / 100 ns
+`default_nettype none `timescale 1 ns / 1 ps
+
 
 `include "byte_transmitter.sv"
 `include "byte_receiver.sv"

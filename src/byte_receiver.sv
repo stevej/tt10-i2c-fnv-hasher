@@ -1,7 +1,7 @@
 `ifndef _BYTE_RECEIVER_
 `define _BYTE_RECEIVER_
 
-`default_nettype none `timescale 1us / 100 ns
+`default_nettype none `timescale 1 ns / 1 ps
 
 
 // Reads in a full byte 1 bit at a time as long as enable is high.
