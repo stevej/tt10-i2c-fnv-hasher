@@ -10,12 +10,15 @@
 // the I2C peripheral controller.
 
 module i2c_sampler (
-    input logic clk,  // using SCL for our clock.
+    input logic clk,
     input logic sck,
     input logic reset,
     input logic read_channel,
     output logic [7:0] direction,  // set to the correct mask before using read_channel or write_channel
-    output logic write_channel
+    output logic write_channel,
+    inout logic seen_start,
+    inout logic seen_repeated_start,
+    inout logic seen_stop
 );
 
   localparam [7:0] SampleClockDivider = 8'd32;
@@ -24,6 +27,21 @@ module i2c_sampler (
   logic start_condition;
   logic repeated_start_condition;
   logic stop_condition;
+
+  // Synchronization variables
+  logic unsynced_sck;
+  logic synced_sck;
+
+  logic unsynced_sda;
+  logic synced_sda;
+
+  reg   seen_start_r;
+  reg   seen_repeated_start_r;
+  reg   seen_stop_r;
+
+  assign seen_start = seen_start_r;
+  assign seen_repeated_start = seen_repeated_start_r;
+  assign seen_stop = seen_stop_r;
 
   i2c_periph i2c_periph (
       .system_clk(clk),
@@ -34,11 +52,19 @@ module i2c_sampler (
       .write_channel(write_channel),
       .start_condition(start_condition),
       .repeated_start_condition(repeated_start_condition),
-      .stop_condition(stop_condition)
+      .stop_condition(stop_condition),
+      .seen_start(seen_start),
+      .seen_repeated_start(seen_repeated_start),
+      .seen_stop(seen_stop)
   );
 
   logic [7:0] sample_clk;
   logic [7:0] sample_clk_counter;
+
+  logic sck_high_seen;
+  logic sda_high_seen;
+  logic sda_state;
+  logic sda_state_change_during_pulse;
 
   always @(posedge clk) begin
     if (reset) begin
@@ -47,14 +73,37 @@ module i2c_sampler (
       start_condition <= 0;
       repeated_start_condition <= 0;
       stop_condition <= 0;
+      seen_start_r <= 0;
+      seen_repeated_start_r <= 0;
+      seen_stop_r <= 0;
+      unsynced_sck <= 0;
+      synced_sck <= 0;
+      unsynced_sda <= 0;
+      synced_sda <= 0;
+      sck_high_seen <= 0;
+      sda_state <= 0;
+      sda_state_change_during_pulse <= 0;
+      sda_high_seen <= 0;
     end else begin
-      if (sample_clk_counter == SampleClockDivider) begin
-        // set up clock divider with a quotient of 32
-        sample_clk_counter <= 0;
-        sample_clk <= 1;
-      end else begin
-        sample_clk_counter <= sample_clk_counter + 1;
-        sample_clk <= 0;
+      // Synchronize sck and sda as they on another clock domain (sck)
+      unsynced_sck <= sck;  // CDC for SCK
+      synced_sck   <= unsynced_sck;
+
+      unsynced_sda <= read_channel;  // CDC for SDA
+      synced_sda   <= unsynced_sda;
+
+      // TODO: In a single SCK pulse, when SDA goes high then low, set start_condition.
+      // TODO: Once start_condition occurs, if a SDA pulse goes high then low, then restart_condition
+      // TODO: Once start_condition occurs, if a SDA pulse goes low then high, then stop_condition.
+      // TODO: When stable_sck goes high and sda is high, use a negative edge tracker to find START and REPEATED_START
+      if (synced_sck == 1'b1) begin
+        start_condition <= sda_high_seen && (synced_sda == 1'b0);
+        sda_high_seen <= sda_high_seen || (synced_sda == 1'b1);
+        seen_start_r <= seen_start_r || start_condition;  // if this ever goes high, it stays high.
+      end else begin  // sck is low so reset all state
+        sck_high_seen   <= 0;
+        sda_high_seen   <= 0;
+        start_condition <= 0;
       end
     end
   end
@@ -62,13 +111,13 @@ module i2c_sampler (
   logic [2:0] current_condition;
   localparam [2:0] StartCondition = 3'b001;
   localparam [2:0] StopCondition = 3'b010;
-
+  /*
   always @(posedge sample_clk) begin
     // We are looking for the following conditions. While a clk is still high, do we see: Low to High, High to Low.
     if (current_condition == StartCondition) begin
       // If we see another START then that is a repeated_start
     end
-  end
+  end*/
 
 endmodule
 `endif

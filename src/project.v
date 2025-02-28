@@ -18,11 +18,16 @@ module tt_um_i2c_fnv1a_hasher (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+  // states seen by the i2c_sampler
+  wire seen_start;
+  wire seen_repeated_start;
+  wire seen_stop;
+
   // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
+  //assign uo_out = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
   wire sda;
   assign uio_out = {1'b0, sda, 6'b00_0000};
-  //assign uio_oe = 0;
+  assign uo_out = {seen_start, seen_repeated_start, seen_stop, 5'b0_0000};
 
   /**
    * TinyTapeout pinout for I2C
@@ -31,17 +36,19 @@ module tt_um_i2c_fnv1a_hasher (
    * uio[2] - SCL
    * uio[3] - SDA
    **/
-
   i2c_sampler i2c_sampler(
       .clk(clk),
       .sck(uio_in[2]), // SCL
-      .reset(~uio_in[1] | ~rst_n),
-      .read_channel(uio_in[3]),
+      .reset(~rst_n),
+      .read_channel(uio_in[3]), // SDA
       .direction(uio_oe),
-      .write_channel(sda)
+      .write_channel(sda),
+      .seen_start(seen_start),
+      .seen_repeated_start(seen_repeated_start),
+      .seen_stop(seen_stop)
   );
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, 1'b0};
+  wire _unused = &{ena, 1'b0};
 
 endmodule

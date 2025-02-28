@@ -17,7 +17,10 @@ module i2c_periph (
     output reg write_channel,
     input logic start_condition,
     input logic repeated_start_condition,
-    input logic stop_condition
+    input logic stop_condition,
+    inout logic seen_start,
+    inout logic seen_repeated_start,
+    inout logic seen_stop
 );
 
   localparam [3:0] Stop = 4'b0001;  // 1
@@ -147,7 +150,7 @@ module i2c_periph (
       case (current_state)
         Stop: begin
           // transition from low to high over two clock cycles while in STOP.
-          if (last_sda == 0 && read_channel == 1) begin
+          if (seen_start) begin
             current_state <= AddressAndRw;
           end else begin
             current_state <= Stop;
