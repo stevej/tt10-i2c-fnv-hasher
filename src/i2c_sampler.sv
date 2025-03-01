@@ -16,10 +16,7 @@ module i2c_sampler (
     input logic reset,
     input logic read_channel,
     output logic [7:0] direction,  // set to the correct mask before using read_channel or write_channel
-    output logic write_channel,
-    input logic seen_start,
-    input logic seen_repeated_start,
-    input logic seen_stop
+    output logic write_channel
 );
 
   localparam [7:0] SampleClockDivider = 8'd32;
@@ -35,14 +32,7 @@ module i2c_sampler (
 
   logic unsynced_sda;
   logic synced_sda;
-
-  reg   seen_start_r;
-  reg   seen_repeated_start_r;
-  reg   seen_stop_r;
-
-  assign seen_start = seen_start_r;
-  assign seen_repeated_start = seen_repeated_start_r;
-  assign seen_stop = seen_stop_r;
+  logic seen_start;
 
   i2c_periph i2c_periph (
       .system_clk(clk),
@@ -67,6 +57,9 @@ module i2c_sampler (
   logic sda_state;
   logic sda_state_change_during_pulse;
 
+  reg seen_start_r;
+  assign seen_start = seen_start_r;
+
   always @(posedge clk) begin
     if (reset) begin
       sample_clk <= 0;
@@ -74,9 +67,6 @@ module i2c_sampler (
       start_condition <= 0;
       repeated_start_condition <= 0;
       stop_condition <= 0;
-      seen_start_r <= 0;
-      seen_repeated_start_r <= 0;
-      seen_stop_r <= 0;
       unsynced_sck <= 0;
       synced_sck <= 0;
       unsynced_sda <= 0;
@@ -85,6 +75,7 @@ module i2c_sampler (
       sda_state <= 0;
       sda_state_change_during_pulse <= 0;
       sda_high_seen <= 0;
+      seen_start_r <= 0;
     end else begin
       // Synchronize sck and sda as they on another clock domain (sck)
       unsynced_sck <= sck;  // CDC for SCK
