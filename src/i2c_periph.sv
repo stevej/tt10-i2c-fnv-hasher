@@ -247,7 +247,7 @@ module i2c_periph (
   end
 
 `ifdef FORMAL
-  always @(posedge clk) begin
+  always @(posedge system_clk) begin
   end
 `endif
 
