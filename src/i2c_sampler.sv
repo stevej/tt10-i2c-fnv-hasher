@@ -51,21 +51,19 @@ module i2c_sampler (
       .seen_stop(seen_stop)
   );
 
-  logic [7:0] sample_clk;
-  logic [7:0] sample_clk_counter;
-
-  logic sck_high_seen;
   logic sda_high_seen;
-  logic sda_state;
-  logic sda_state_change_during_pulse;
 
-  reg seen_start_r;
+  reg   seen_start_r;
   assign seen_start = seen_start_r;
+
+  reg seen_repeated_start_r;
+  assign seen_repeated_start = seen_repeated_start_r;
+
+  reg seen_stop_r;
+  assign seen_stop = seen_stop_r;
 
   always @(posedge clk) begin
     if (reset) begin
-      sample_clk <= 0;
-      sample_clk_counter <= 0;
       start_condition <= 0;
       repeated_start_condition <= 0;
       stop_condition <= 0;
@@ -73,11 +71,10 @@ module i2c_sampler (
       synced_sck <= 0;
       unsynced_sda <= 0;
       synced_sda <= 0;
-      sck_high_seen <= 0;
-      sda_state <= 0;
-      sda_state_change_during_pulse <= 0;
       sda_high_seen <= 0;
       seen_start_r <= 0;
+      seen_repeated_start_r <= 0;
+      seen_stop_r <= 0;
     end else begin
       // Synchronize sck and sda as they on another clock domain (sck)
       unsynced_sck <= sck;  // CDC for SCK
@@ -95,23 +92,11 @@ module i2c_sampler (
         sda_high_seen <= sda_high_seen || (synced_sda == 1'b1);
         seen_start_r <= seen_start_r || start_condition;  // if this ever goes high, it stays high.
       end else begin  // sck is low so reset all state
-        sck_high_seen   <= 0;
         sda_high_seen   <= 0;
         start_condition <= 0;
       end
     end
   end
-
-  logic [2:0] current_condition;
-  localparam [2:0] StartCondition = 3'b001;
-  localparam [2:0] StopCondition = 3'b010;
-  /*
-  always @(posedge sample_clk) begin
-    // We are looking for the following conditions. While a clk is still high, do we see: Low to High, High to Low.
-    if (current_condition == StartCondition) begin
-      // If we see another START then that is a repeated_start
-    end
-  end*/
 
 endmodule
 `endif

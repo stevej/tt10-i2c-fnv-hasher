@@ -74,64 +74,6 @@ module i2c_periph (
   reg [7:0] one_zero;
   reg [7:0] zero_one;
 
-  // data and wires sent from an i2c request to be hashed.
-  reg [7:0] to_hasher_write_data;
-  logic to_hasher_write_inc;
-  logic to_hasher_write_full;
-  logic to_hasher_awfull;
-
-  reg [7:0] to_hasher_read_data;
-  logic to_hasher_read_inc;
-  logic to_hasher_read_empty;
-  logic to_hasher_aread_empty;
-
-  async_fifo #(
-      .DSIZE(8),
-      .ASIZE(4)
-  ) to_hasher_fifo (
-      .wclk(sck),
-      .wrst_n(~reset),
-      .winc(to_hasher_write_inc),  // push data into the fifo from i2c write request
-      .wdata(to_hasher_write_data),
-      .wfull(to_hasher_write_full),
-      .awfull(to_hasher_awfull),  // huh?
-      .rclk(system_clk),
-      .rrst_n(~reset),
-      .rinc(to_hasher_read_inc),  // pop data from the fifo into hasher
-      .rdata(to_hasher_read_data),  // read_* should be handled by hasher_fsm
-      .rempty(to_hasher_read_empty),
-      .arempty(to_hasher_aread_empty)
-  );
-
-  // data and wires sent from the hasher to an i2c response.
-  reg [31:0] from_hasher_write_data;
-  logic from_hasher_write_inc;
-  logic from_hasher_write_full;
-  logic from_hasher_awfull;
-
-  reg [31:0] from_hasher_read_data;
-  logic from_hasher_read_inc;
-  logic from_hasher_read_empty;
-  logic from_hasher_aread_empty;
-
-  async_fifo #(
-      .DSIZE(32),
-      .ASIZE(4)
-  ) from_hasher_fifo (
-      .wclk(sck),
-      .wrst_n(~reset),
-      .winc(from_hasher_write_inc),  // push data onto fifo from hasher
-      .wdata(from_hasher_write_data),
-      .wfull(from_hasher_write_full),
-      .awfull(from_hasher_awfull),  // huh?
-      .rclk(system_clk),
-      .rrst_n(~reset),
-      .rinc(from_hasher_read_inc),  // pop data from fifo. this goes into the i2c response body
-      .rdata(from_hasher_read_data),  // read_* should be handled by hasher_fsm
-      .rempty(from_hasher_read_empty),
-      .arempty(from_hasher_aread_empty)
-  );
-
   always @(posedge sck) begin
     if (reset) begin
       r_output_selector_transmitter <= 1;
