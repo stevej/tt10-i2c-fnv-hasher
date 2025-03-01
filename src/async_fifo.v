@@ -4,7 +4,7 @@
 `ifndef _ASYNC_FIFO_F_
 `define _ASYNC_FIFO_F_
 
-`timescale 1us / 100 ns
+`timescale 1 ns / 1 ps
 `default_nettype none
 
 `include "sync_r2w.v"
