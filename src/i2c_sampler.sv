@@ -17,9 +17,9 @@ module i2c_sampler (
     input logic read_channel,
     output logic [7:0] direction,  // set to the correct mask before using read_channel or write_channel
     output logic write_channel,
-    inout logic seen_start,
-    inout logic seen_repeated_start,
-    inout logic seen_stop
+    input logic seen_start,
+    input logic seen_repeated_start,
+    input logic seen_stop
 );
 
   localparam [7:0] SampleClockDivider = 8'd32;

@@ -19,9 +19,9 @@ module i2c_periph (
     input logic start_condition,
     input logic repeated_start_condition,
     input logic stop_condition,
-    inout logic seen_start,
-    inout logic seen_repeated_start,
-    inout logic seen_stop
+    input logic seen_start,
+    input logic seen_repeated_start,
+    input logic seen_stop
 );
 
   localparam [3:0] Stop = 4'b0001;  // 1
