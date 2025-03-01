@@ -25,20 +25,18 @@ memory_map -rom-only
 # sat -prove-asserts -set-assumes
 
 [files]
-byte_transmitter.sv
+project.v
+async_fifo.v
+fifomem.v
+i2c_periph.sv
+mux_2_1.sv
+sync_r2w.v
 byte_receiver.sv
 fnv_1a_32.sv
-i2c_periph.sv
-project.v
-mux_2_1.sv
+i2c_sampler.sv
+sync_w2r.v
+byte_transmitter.sv
 hasher_fsm.sv
-async_fifo/async_fifo.v
-async_fifo/sync_r2w.v
-async_fifo/async_bidir_fifo.v
-async_fifo/fifomem.v
-async_fifo/sync_w2r.v
-async_fifo/fifomem_dp.v
-async_fifo/wptr_full.v
-async_fifo/async_bidir_ramif_fifo.v
-async_fifo/rptr_empty.v
-async_fifo/sync_ptr.v
+lzc.sv
+rptr_empty.v
+wptr_full.v
