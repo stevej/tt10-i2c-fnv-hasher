@@ -4,7 +4,6 @@
 `ifndef _FIFOMEM_
 `define _FIFOMEM_
 
-`timescale 1 ns / 1 ps
 `default_nettype none
 
 module fifomem

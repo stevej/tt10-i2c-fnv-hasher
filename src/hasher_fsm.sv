@@ -1,7 +1,7 @@
 `ifndef _HASHER_FSM_
 `define _HASHER_FSM_
 
-`default_nettype none `timescale 1 ns / 1 ps
+`default_nettype none
 
 // Fnv-1a works on an octet, so for each entry in the fifo, we set enable on the hasher and ensure
 // that the fifo is worked with properly. This allows the hasher to focus only on hashing.

@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-`default_nettype none `timescale 1 ns / 1 ps
-
+`default_nettype none
 
 `include "i2c_sampler.sv"
 

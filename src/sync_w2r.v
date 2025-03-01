@@ -4,7 +4,6 @@
 `ifndef _SYNC_W2R_
 `define _SYNC_W2R_
 
-`timescale 1 ns / 1 ps
 `default_nettype none
 
 module sync_w2r

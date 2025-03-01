@@ -4,7 +4,6 @@
 `ifndef _WPTR_FULL_
 `define _WPTR_FULL_
 
-`timescale 1 ns / 1 ps
 `default_nettype none
 
 module wptr_full

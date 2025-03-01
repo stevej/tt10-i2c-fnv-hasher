@@ -1,7 +1,7 @@
 `ifndef _I2C_SAMPLER_
 `define _I2C_SAMPLER_
 
-`default_nettype none `timescale 1 ns / 1 ps
+`default_nettype none
 
 
 `include "i2c_periph.sv"

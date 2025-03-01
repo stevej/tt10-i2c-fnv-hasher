@@ -1,7 +1,7 @@
 `ifndef _LZC_
 `define _LZC_
 
-`default_nettype none `timescale 1 ns / 1 ps
+`default_nettype none
 
 module enc (
     input  wire [1:0] in,

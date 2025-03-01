@@ -4,7 +4,6 @@
 `ifndef _RPTR_EMPTY_
 `define _RPTR_EMPTY_
 
-`timescale 1 ns / 1 ps
 `default_nettype none
 
 module rptr_empty

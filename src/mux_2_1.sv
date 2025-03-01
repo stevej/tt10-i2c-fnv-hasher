@@ -1,7 +1,7 @@
 `ifndef _MUX_2_1_
 `define _MUX_2_1_
 
-`default_nettype none `timescale 1 ns / 1 ps
+`default_nettype none
 
 
 module mux_2_1 (
