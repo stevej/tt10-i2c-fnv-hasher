@@ -33,6 +33,8 @@ module i2c_sampler (
   logic unsynced_sda;
   logic synced_sda;
   logic seen_start;
+  logic seen_repeated_start;
+  logic seen_stop;
 
   i2c_periph i2c_periph (
       .system_clk(clk),
